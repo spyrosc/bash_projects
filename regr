@@ -1,0 +1,64 @@
+#!/bin/bash
+
+
+for file_name
+do
+if [ -e $file_name ]
+ then #elegxos an ipaxei to arxio
+
+exec < $file_name 
+IFS=$':' #diaxoristiko 
+let "length=0"
+while read line #diabasma arxio kai perasma se array
+do
+set $line
+x_array+=("$1")
+y_array+=("$2")
+let "length = $length + 1"
+done
+sum_x=0
+sum_y=0
+sum_xy=0
+sum_x2=0
+a=0
+b=0
+err=0
+
+#ypoloismos gi mi stathera dianismata
+for ((i=0;i<length;i++)) 
+do
+sum_x=$(echo "scale=2 ; $sum_x + ${x_array[$i]}/1" | bc)
+sum_y=$(echo "scale=2 ; $sum_y + ${y_array[$i]}/1"| bc)
+sum_xy=$(echo "scale=2 ; $sum_xy+(${x_array[$i]}*${y_array[$i]})/1"| bc)
+sum_x2=$(echo "scale=2 ; $sum_x2+(${x_array[$i]}*${x_array[$i]})/1"| bc)
+done
+
+let "flag_i =`echo $length*$sum_x2-$sum_x*$sum_x\>0|bc`"
+# mi stathera dianismata
+if [ "$flag_i" -eq  "1" ]
+then
+a=$(echo "scale=2; ($length*$sum_xy-$sum_x*$sum_y)/($length*$sum_x2-$sum_x*$sum_x)"| bc)
+b=$(echo "scale=2; ($sum_y-$a*$sum_x)/$length"| bc)
+#ypologismos err
+
+for ((i=0;i<length;i++)) 
+do
+err=$(echo "scale=2; $err+((${y_array[$i]}-($a*${x_array[$i]}+$b))^2)/1"| bc)
+done
+
+
+echo FILE:$file_name, a=$a b=$b c=1 err=$err 
+
+elif [ "$flag_i" -eq  "0" ]
+then
+echo FILE:$file_name, a=1 b= -${x_array[1]} c=0 err=0 
+
+fi
+
+unset y_array
+unset x_array
+
+fi
+done
+
+
